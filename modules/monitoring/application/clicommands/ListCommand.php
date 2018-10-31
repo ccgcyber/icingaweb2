@@ -10,6 +10,7 @@ use Icinga\Cli\Command;
 use Icinga\File\Csv;
 use Icinga\Module\Monitoring\Plugin\PerfdataSet;
 use Exception;
+use Icinga\Util\Json;
 
 /**
  * Icinga monitoring objects
@@ -55,9 +56,6 @@ class ListCommand extends Command
             $query->limit($limit, $this->params->shift('offset'));
         }
         foreach ($this->params->getParams() as $col => $filter) {
-            if (strtolower($col) === 'problems') {
-                $col = 'service_problem';
-            }
             $query->where($col, $filter);
         }
         // $query->applyFilters($this->params->getParams());
@@ -78,7 +76,7 @@ class ListCommand extends Command
         $query = $query->getQuery();
         switch ($format) {
             case 'json':
-                echo json_encode($query->fetchAll());
+                echo Json::sanitize($query->fetchAll());
                 break;
             case 'csv':
                 Csv::fromQuery($query)->dump();

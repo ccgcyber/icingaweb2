@@ -4,6 +4,96 @@ Please make sure to always read our [Upgrading](doc/80-Upgrading.md) documentati
 
 ## What's New
 
+### What's New in Version 2.6.1
+
+You can find issues and features related to this release on our [Roadmap](https://github.com/Icinga/icingaweb2/milestone/51?closed=1).
+
+The command audit now logs a command's payload as JSON which fixes a
+[bug](https://github.com/Icinga/icingaweb2/issues/3535) that has been introduced in version 2.6.0.
+
+### What's New in Version 2.6.0
+
+You can find issues and features related to this release on our [Roadmap](https://github.com/Icinga/icingaweb2/milestone/48?closed=1).
+
+#### Enabling you to do stuff you couldn't before
+
+* Support for PHP 7.2 added
+* Support for SQLite resources added
+* Login and Command (monitoring) auditing added with the help of a dedicated [module](https://github.com/Icinga/icingaweb2-module-audit)
+* Pluginoutput rendering is now hookable by modules which allows to render custom icons, emojis and .. cute kitties :octocat:
+
+#### Avoiding that you miss something
+
+* It's now possible to toggle between list- and grid-mode for the host- and servicegroup overviews
+* The servicegrid now supports to flip its axes which allows it to be put into a [landscape mode](https://github.com/Icinga/icingaweb2/pull/3449#issue-185415579)
+* Contacts only associated with services are visible now when restricted based on host filters
+* Negated and combined membership filters now work as expected ([#2934](https://github.com/Icinga/icingaweb2/issues/2934))
+* A more prominent error message in case the monitoring backend goes down
+* The filter editor doesn't get cleared anymore upon hitting Enter
+
+#### Making your life a bit easier
+
+* The tactical overview is now filterable and can be safely put into [the dashboard](https://github.com/Icinga/icingaweb2/pull/3446#issue-185379142)
+* It is now possible to register new announcements over the [REST Api](https://github.com/Icinga/icingaweb2/issues/2749#issuecomment-279667189)
+* Filtering for custom variables now works in UTF8 environments
+
+#### Ensuring you understand everything
+
+* The monitoring health is now beautiful to look at and properly behaves in [narrow environments](https://github.com/Icinga/icingaweb2/pull/3515#issue-200075373)
+* Updated German localization
+* Updated Italian localization
+
+#### Freeing you from unrealiable things
+
+* Removed support for PHP < 5.6
+* Removed support for persistent database connections
+
+### What's New in Version 2.5.3
+
+You can find issues and features related to this release on our [Roadmap](https://github.com/Icinga/icingaweb2/milestone/50?closed=1).
+
+#### Fixes
+
+A fix for an issue introduced with v2.5.2 that prevented service-only contacts from appearing in the UI resulted in long
+database response times and has been reverted.
+
+### What's New in Version 2.5.2
+
+You can find issues and features related to this release on our [Roadmap](https://github.com/Icinga/icingaweb2/milestone/49?closed=1).
+
+#### UI Changes
+
+The sidebar's search behaviour has been changed so that it does only react to user-input after the user stopped typing.
+Also, the cursor does not jump to the end of form-inputs anymore in case of an auto-refresh. We've also fixed an issue
+that caused [custom icons](https://github.com/Icinga/icingaweb2/issues/3181#issuecomment-378875462) to be inverted when
+placed in the sidebar. Last but not least, the header now expands its width beyond the 3840px mark and single dashlets
+do not show a horizontal scrollbar anymore.
+
+#### PHP7 MSSQL Compatibility
+
+Support for Microsoft's `sqlsrv` extension has been added. Also, it's now possible to setup MSSQL resources in the
+front-end using the `dblib` extension.
+
+#### Proper Error Responses
+
+An issue introduced with v2.5.1 has been resolved where some errors (especially HTTP 404 Not Found) were masked
+by another subsequent error.
+
+#### Broken LDAP Group Memberships
+
+An issue introduced with v2.5.1 has been resolved where users with a domain in their name were not associated with any
+LDAP groups.
+
+#### Monitoring Module
+
+Issuing a check using the "Check Now" action now properly causes a check being made by Icinga 2 even if outside the
+timeperiod. (Note: This issue was only present if using the Icinga 2 Api as command transport.)
+
+#### Login/Logout Expandability
+
+It's now possible for modules to provide hooks for the user authorization. This for example allows to transparently
+authenticate users in third-party applications such as [Grafana](https://github.com/Icinga/icingaweb2/pull/3401#issue-178030542).
+
 ### What's New in Version 2.5.1
 
 You can find issues and features related to this release on our [Roadmap](https://github.com/Icinga/icingaweb2/milestone/47?closed=1).
@@ -731,4 +821,3 @@ The location of a user's preferences has been changed from config-dir/preference
 * Bug 9378: Rpm calls usermod w/ invalid option on openSUSE
 * Bug 9384: Timeline+Role problem
 * Bug 9392: Command links seem to be broken
-

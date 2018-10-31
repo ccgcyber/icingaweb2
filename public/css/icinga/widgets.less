@@ -6,45 +6,72 @@
   margin: 0;
   padding: 0;
 
-  > li:before {
-    color: @icinga-blue;
-    content: "\e811";
-    font-family: 'ifont';
-    left: 1em;
-    margin-top: -1em;
-    padding: 0.3em;
-    position: absolute;
-    text-align: center;
-    top: 50%;
-  }
-
   > li {
     border-bottom: 1px solid @gray-lighter;
-    padding: 1em 3em;
+    line-height: 1.5em;
+    padding: 0.5em 1em 0.5em 3em;
+
     position: relative;
+
+    &:before {
+      color: @icinga-blue;
+      content: "\e811";
+      font-family: 'ifont';
+
+      position: absolute;
+      left: 1.25em;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
 
     a {
       color: @icinga-blue;
     }
-  }
 
-  > li .message {
-    display: inline-block;
-    vertical-align: middle;
+    .message {
+      display: inline-block;
+      vertical-align: middle;
+    }
   }
+}
 
-  > li:last-child {
-    border-bottom: none;
+.acknowledge-announcement-control,
+.application-state-acknowledge-message-control {
+  background: none;
+  border: none;
+  display: block;
+  margin-top: -0.75em;
+
+  position: absolute;
+  right: 1em;
+  top: 50%;
+}
+
+.application-state-acknowledge-message-control .link-button {
+  color: #fff;
+
+  &:hover .icon-cancel {
+    color: @icinga-blue;
   }
+}
 
-  .acknowledge-announcement-control {
-    background: none;
-    border: none;
-    display: block;
-    margin-top: -0.6em;
+#application-state-summary > div {
+  background-color: @color-critical;
+  color: #fff;
+  line-height: 1.5em;
+  padding: 0.5em 1em 0.5em 3em;
+  width: 100%;
+
+  position: relative;
+
+  &:before {
+    content: "\e84d";
+    font-family: 'ifont';
+
     position: absolute;
-    right: 1em;
-    top: 50%;
+    left: 1.25em;
   }
 }
 
@@ -99,6 +126,12 @@
   > i {
     font-size: 3em;
     opacity: 0.7;
+  }
+
+  > img {
+    width: 3em;
+    height: 3em;
+    margin-right: .6em;
   }
 }
 
@@ -163,6 +196,11 @@ table.multiselect tr[href] td {
 
     div.buttons {
       float: right;
+    }
+
+    button {
+      border: none;
+      background: none;
     }
   }
 }
@@ -295,6 +333,7 @@ ul.tree li a.error:hover {
   font-size: @font-size-small;
   max-width: 300px;
   text-align: left;
+  background-color: rgba(0,0,0,0.8);
 }
 
 .progress-label span {
@@ -444,7 +483,6 @@ ul.tree li a.error:hover {
 .donut-label-small {
   fill: @text-color;
   font-size: 1.2em;
-  text-transform: lowercase;
   text-anchor: middle;
   -moz-transform: translateY(0.35em);
   -ms-transform: translateY(0.35em);

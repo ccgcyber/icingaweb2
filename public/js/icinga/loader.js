@@ -343,6 +343,12 @@
                 }
             }
 
+            var useHttp = req.getResponseHeader('X-Icinga-Redirect-Http');
+            if (useHttp === 'yes') {
+                window.location.replace(redirect);
+                return true;
+            }
+
             this.redirectToUrl(
                 redirect, req.$target, req.url, req.getResponseHeader('X-Icinga-Rerender-Layout'), req.forceFocus,
                 req.getResponseHeader('X-Icinga-Refresh')
@@ -582,7 +588,7 @@
                 oldNotifications.appendTo($('#notifications'));
             }
             if (url.match(/#/)) {
-                this.icinga.ui.focusElement(url.split(/#/)[1], req.$target);
+                setTimeout(this.icinga.ui.focusElement, 0, url.split(/#/)[1], req.$target);
             }
             if (newBody) {
                 this.icinga.ui.fixDebugVisibility().triggerWindowResize();
@@ -857,15 +863,6 @@
 
                     if ($activeElement.length && $activeElement.is(':visible')) {
                         $activeElement.focus();
-                        if ($activeElement.is('input[type=text]')) {
-                            if (typeof $activeElement[0].setSelectionRange === 'function') {
-                                // Place focus after the last character. Could be extended to other
-                                // input types, would require some \r\n "magic" to work around issues
-                                // with some browsers
-                                var len = $activeElement.val().length;
-                                $activeElement[0].setSelectionRange(len, len);
-                            }
-                        }
                     } else if (! autorefresh) {
                         if (focusFallback) {
                             $(focusFallback.parent).find(focusFallback.child).focus();

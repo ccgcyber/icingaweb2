@@ -21,17 +21,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network "forwarded_port", guest: 443, host: 8443,
     auto_correct: true
 
-  config.vm.box = "bento/centos-7.4"
+  config.vm.box = "bento/centos-7"
 
   config.vm.provision :shell, :path => ".puppet/manifests/puppet.sh"
 
   config.vm.provider :parallels do |p, override|
     p.name = "Icinga Web 2 Development"
-
-    # Update Parallels Tools automatically ...
-    p.update_guest_tools = false
-    # ... but don't fail completely. (see the shell script)
-    override.vm.provision :shell, :run => "always", :path => ".puppet/manifests/parallels-upgrade-guest-tools.sh"
 
     # Set power consumption mode to "Better Performance"
     p.optimize_power_consumption = false

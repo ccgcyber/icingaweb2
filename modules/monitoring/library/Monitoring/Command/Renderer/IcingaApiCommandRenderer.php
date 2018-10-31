@@ -132,7 +132,7 @@ class IcingaApiCommandRenderer implements IcingaCommandRendererInterface
         $endpoint = 'actions/reschedule-check';
         $data = array(
             'next_check'    => $command->getCheckTime(),
-            'force_check'   => $command->getForced()
+            'force'         => $command->getForced()
         );
         $this->applyFilter($data, $command->getObject());
         return IcingaApiCommand::create($endpoint, $data);
@@ -180,7 +180,8 @@ class IcingaApiCommandRenderer implements IcingaCommandRendererInterface
             'author'        => $command->getAuthor(),
             'comment'       => $command->getComment(),
             'sticky'        => $command->getSticky(),
-            'notify'        => $command->getNotify()
+            'notify'        => $command->getNotify(),
+            'persistent'    => $command->getPersistent()
         );
         if ($command->getExpireTime() !== null) {
             $data['expiry'] = $command->getExpireTime();

@@ -13,6 +13,7 @@
         this.icinga = icinga;
 
         this.searchValue = '';
+        this.searchTimer = null;
         this.initializeModules = true;
     };
 
@@ -121,9 +122,6 @@
             $( window ).on('unload', { self: this }, this.onUnload);
             $( window ).on('beforeunload', { self: this }, this.onUnload);
 
-            // We catch scroll events in our containers
-            $('.container').on('scroll', { self: this }, this.icinga.events.onContainerScroll);
-
             // Remove notifications on click
             $(document).on('click', '#notifications li', function () { $(this).remove(); });
 
@@ -163,6 +161,8 @@
             } else {
                 $parent.addClass('collapsed');
             }
+
+            icinga.ui.fixControls($parent.closest('.container'));
         },
 
         onLoad: function (event) {
@@ -188,14 +188,6 @@
             }
         },
 
-        /**
-         * A scroll event happened in one of our containers
-         */
-        onContainerScroll: function (event) {
-            // Ugly. And PLEASE, not so often
-            icinga.ui.fixControls();
-        },
-
         autoCheckRadioButton: function (event) {
             var $input = $(event.currentTarget);
             var $radio = $('#' + $input.attr('data-related-radiobtn'));
@@ -211,7 +203,16 @@
                 return;
             }
             _this.searchValue = $('#menu input.search').val();
-            return _this.autoSubmitForm(event);
+
+            if (_this.searchTimer !== null) {
+                clearTimeout(_this.searchTimer);
+                _this.searchTimer = null;
+            }
+            var _event = $.extend({}, event);  // event seems gc'd once the timeout is over
+            _this.searchTimer = setTimeout(function () {
+                _this.submitForm(_event, true);
+                _this.searchTimer = null;
+            }, 500);
         },
 
         rememberSubmitButton: function(e) {

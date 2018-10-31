@@ -20,6 +20,11 @@ class HoststatusQuery extends IdoQuery
      */
     protected $groupOrigin = array('hostgroups', 'servicegroups', 'services');
 
+    protected $subQueryTargets = array(
+        'hostgroups'    => 'hostgroup',
+        'servicegroups' => 'servicegroup'
+    );
+
     /**
      * {@inheritdoc}
      */
@@ -38,6 +43,7 @@ class HoststatusQuery extends IdoQuery
             'host_address'          => 'h.address',
             'host_address6'         => 'h.address6',
             'host_alias'            => 'h.alias',
+            'host_check_interval'   => '(h.check_interval * 60)',
             'host_display_name'     => 'h.display_name COLLATE latin1_general_ci',
             'host_icon_image'       => 'h.icon_image',
             'host_icon_image_alt'   => 'h.icon_image_alt',
@@ -142,7 +148,8 @@ class HoststatusQuery extends IdoQuery
             'host_state'                => 'CASE WHEN hs.has_been_checked = 0 OR hs.has_been_checked IS NULL THEN 99 ELSE hs.current_state END',
             'host_state_type'           => 'hs.state_type',
             'host_status_update_time'   => 'hs.status_update_time',
-            'host_unhandled'            => 'CASE WHEN (hs.problem_has_been_acknowledged + hs.scheduled_downtime_depth) = 0 THEN 1 ELSE 0 END'
+            'host_unhandled'            => 'CASE WHEN (hs.problem_has_been_acknowledged + hs.scheduled_downtime_depth) = 0 THEN 1 ELSE 0 END',
+            'problems'                  => 'CASE WHEN COALESCE(hs.current_state, 0) = 0 THEN 0 ELSE 1 END'
         ),
         'instances' => array(
             'instance_name' => 'i.instance_name'
@@ -289,5 +296,20 @@ class HoststatusQuery extends IdoQuery
                 'host_name',
                 'unhandled_service_count'
             ));
+    }
+
+    protected function joinSubQuery(IdoQuery $query, $name, $filter, $and, $negate, &$additionalFilter)
+    {
+        if ($name === 'hostgroup') {
+            $query->joinVirtualTable('members');
+
+            return ['hgm.host_object_id', 'ho.object_id'];
+        } elseif ($name === 'servicegroup') {
+            $query->joinVirtualTable('services');
+
+            return ['s.host_object_id', 'ho.object_id'];
+        }
+
+        return parent::joinSubQuery($query, $name, $filter, $and, $negate, $additionalFilter);
     }
 }

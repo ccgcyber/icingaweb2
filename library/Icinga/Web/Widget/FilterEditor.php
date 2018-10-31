@@ -327,6 +327,17 @@ class FilterEditor extends AbstractWidget
                     $filter = $this->applyChanges($request->getPost());
                     $url = $this->url()->setQueryString($filter->toQueryString())->addParams($preserve);
                     $url->getParams()->add('modifyFilter');
+
+                    $addFilter = $request->get('add_filter');
+                    if ($addFilter !== null) {
+                        $url->setParam('addFilter', $addFilter);
+                    }
+
+                    $removeFilter = $request->get('remove_filter');
+                    if ($removeFilter !== null) {
+                        $url->setParam('removeFilter', $removeFilter);
+                    }
+
                     $this->redirectNow($url);
                 }
             }
@@ -388,28 +399,16 @@ class FilterEditor extends AbstractWidget
 
     protected function removeLink(Filter $filter)
     {
-        return $this->view()->qlink(
-            '',
-            $this->preservedUrl()->with('removeFilter', $filter->getId()),
-            null,
-            array(
-                'icon'  => 'trash',
-                'title' => t('Remove this part of your filter')
-            )
-        );
+        return "<button type='submit' name='remove_filter' value='{$filter->getId()}'>"
+            . $this->view()->icon('trash', t('Remove this part of your filter'))
+            . '</button>';
     }
 
     protected function addLink(Filter $filter)
     {
-        return $this->view()->qlink(
-            '',
-            $this->preservedUrl()->with('addFilter', $filter->getId()),
-            null,
-            array(
-                'icon'  => 'plus',
-                'title' => t('Add another filter')
-            )
-        );
+        return "<button type='submit' name='add_filter' value='{$filter->getId()}'>"
+            . $this->view()->icon('plus', t('Add another filter'))
+            . '</button>';
     }
 
     protected function stripLink(Filter $filter)
@@ -669,7 +668,7 @@ class FilterEditor extends AbstractWidget
             }
         }
 
-        krsort($operators, version_compare(PHP_VERSION, '5.4.0') >= 0 ? SORT_NATURAL : SORT_REGULAR);
+        krsort($operators, SORT_NATURAL);
         foreach ($operators as $id => $operator) {
             $f = $filter->getById($id);
             if ($f->getOperatorName() !== $operator) {
@@ -779,6 +778,7 @@ class FilterEditor extends AbstractWidget
             . '<form action="'
             . Url::fromRequest()
             . '" class="editor" method="POST">'
+            . '<input type="submit" name="submit" value="Apply" style="display:none;"/>'
             . '<ul class="tree"><li>'
             . $this->renderFilter($this->filter)
             . '</li></ul>'

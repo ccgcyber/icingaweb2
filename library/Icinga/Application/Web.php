@@ -5,6 +5,7 @@ namespace Icinga\Application;
 
 require_once __DIR__ . '/EmbeddedWeb.php';
 
+use ErrorException;
 use Zend_Controller_Action_HelperBroker;
 use Zend_Controller_Front;
 use Zend_Controller_Router_Route;
@@ -17,6 +18,7 @@ use Icinga\Util\DirectoryIterator;
 use Icinga\Util\TimezoneDetect;
 use Icinga\Util\Translator;
 use Icinga\Web\Controller\Dispatcher;
+use Icinga\Web\Menu;
 use Icinga\Web\Navigation\Navigation;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -96,7 +98,8 @@ class Web extends EmbeddedWeb
             ->setupUser()
             ->setupTimezone()
             ->setupLogger()
-            ->setupInternationalization();
+            ->setupInternationalization()
+            ->setupFatalErrorHandling();
     }
 
     /**
@@ -280,123 +283,13 @@ class Web extends EmbeddedWeb
     /**
      * Return the app's menu
      *
-     * @return  Navigation
+     * @deprecated Instantiate the returned class directly instead of using this method.
+     *
+     * @return  Menu
      */
     public function getMenu()
     {
-        if ($this->user !== null) {
-            $menu = array(
-                'dashboard' => array(
-                    'label'     => t('Dashboard'),
-                    'url'       => 'dashboard',
-                    'icon'      => 'dashboard',
-                    'priority'  => 10
-                ),
-                'system' => array(
-                    'label'     => t('System'),
-                    'icon'      => 'services',
-                    'priority'  => 700,
-                    'renderer'  => array(
-                        'SummaryNavigationItemRenderer',
-                        'state' => 'critical'
-                    ),
-                    'children'  => array(
-                        'about' => array(
-                            'icon'        => 'info',
-                            'description' => t('Open about page'),
-                            'label'       => t('About'),
-                            'url'         => 'about',
-                            'priority'    => 700
-                        ),
-                        'announcements' => array(
-                            'icon'        => 'megaphone',
-                            'description' => t('List announcements'),
-                            'label'       => t('Announcements'),
-                            'url'         => 'announcements',
-                            'priority'    => 710
-                        )
-                    )
-                ),
-                'configuration' => array(
-                    'label'         => t('Configuration'),
-                    'icon'          => 'wrench',
-                    'permission'    => 'config/*',
-                    'priority'      => 800,
-                    'children'      => array(
-                        'application' => array(
-                            'icon'        => 'wrench',
-                            'description' => t('Open application configuration'),
-                            'label'       => t('Application'),
-                            'url'         => 'config/general',
-                            'permission'  => 'config/application/*',
-                            'priority'    => 810
-                        ),
-                        'authentication' => array(
-                            'icon'        => 'users',
-                            'description' => t('Open authentication configuration'),
-                            'label'       => t('Authentication'),
-                            'permission'  => 'config/authentication/*',
-                            'priority'    => 830,
-                            'url'         => 'role/list'
-                        ),
-                        'navigation' => array(
-                            'icon'        => 'sitemap',
-                            'description' => t('Open shared navigation configuration'),
-                            'label'       => t('Shared Navigation'),
-                            'url'         => 'navigation/shared',
-                            'permission'  => 'config/application/navigation',
-                            'priority'    => 840,
-                        ),
-                        'modules' => array(
-                            'icon'        => 'cubes',
-                            'description' => t('Open module configuration'),
-                            'label'       => t('Modules'),
-                            'url'         => 'config/modules',
-                            'permission'  => 'config/modules',
-                            'priority'    => 890
-                        )
-                    )
-                ),
-                'user' => array(
-                    'cssClass'  => 'user-nav-item',
-                    'label'     => $this->user->getUsername(),
-                    'icon'      => 'user',
-                    'priority'  => 900,
-                    'children'  => array(
-                        'account' => array(
-                            'icon'        => 'sliders',
-                            'description' => t('Open your account preferences'),
-                            'label'       => t('My Account'),
-                            'priority'    => 100,
-                            'url'         => 'account'
-                        ),
-                        'logout' => array(
-                            'icon'        => 'off',
-                            'description' => t('Log out'),
-                            'label'       => t('Logout'),
-                            'priority'    => 200,
-                            'attributes'  => array('target' => '_self'),
-                            'url'         => 'authentication/logout'
-                        )
-                    )
-                )
-            );
-
-            if (Logger::writesToFile()) {
-                $menu['system']['children']['application_log'] = array(
-                    'icon'        => 'doc-text',
-                    'description' => t(''),
-                    'label'       => t('Application Log'),
-                    'url'         => 'list/applicationlog',
-                    'permission'  => 'application/log',
-                    'priority'    => 900
-                );
-            }
-        } else {
-            $menu = array();
-        }
-
-        return Navigation::fromArray($menu)->load('menu-item');
+        return new Menu();
     }
 
     /**
@@ -544,6 +437,37 @@ class Web extends EmbeddedWeb
         Zend_View_Helper_PaginationControl::setDefaultViewPartial(
             array('mixedPagination.phtml', 'default')
         );
+        return $this;
+    }
+
+    /**
+     * Fatal error handling configuration
+     *
+     * @return $this
+     */
+    protected function setupFatalErrorHandling()
+    {
+        register_shutdown_function(function () {
+            $error = error_get_last();
+
+            if ($error !== null && $error['type'] === E_ERROR) {
+                $frontController = Icinga::app()->getFrontController();
+                $response = $frontController->getResponse();
+
+                $response->setException(new ErrorException(
+                    $error['message'],
+                    0,
+                    $error['type'],
+                    $error['file'],
+                    $error['line']
+                ));
+
+                // Clean PHP's fatal error stack trace and replace it with ours
+                ob_end_clean();
+                $frontController->dispatch($frontController->getRequest(), $response);
+            }
+        });
+
         return $this;
     }
 

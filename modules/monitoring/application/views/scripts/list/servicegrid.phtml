@@ -6,7 +6,9 @@ use Icinga\Web\Url;
 if (! $this->compact): ?>
 <div class="controls">
     <?= $this->tabs ?>
-    <?= $this->sortBox ?>
+    <div class="sort-controls-container">
+        <?= $this->sortBox ?>
+    </div>
     <?= $this->filterEditor ?>
 </div>
 <?php endif ?>
@@ -27,13 +29,14 @@ foreach ($pivotData as $hostName => $_) {
                 'joystickPagination.phtml',
                 'default',
                 array(
+                    'flippable'      => true,
                     'xAxisPaginator' => $horizontalPaginator,
                     'yAxisPaginator' => $verticalPaginator
                 )
             ) ?></th>
         <?php foreach ($pivotHeader['cols'] as $serviceDescription => $serviceDisplayName): ?>
             <th class="rotate-45"><div><span><?= $this->qlink(
-                $this->ellipsis($serviceDisplayName, 18),
+                $this->ellipsis($serviceDisplayName, 24),
                 Url::fromPath('monitoring/list/services')->addFilter(
                     Filter::matchAll($hostFilter, Filter::where('service_description', $serviceDescription))
                 ),

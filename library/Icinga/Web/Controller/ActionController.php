@@ -424,6 +424,10 @@ class ActionController extends Zend_Controller_Action
 
     protected function redirectHttp($url)
     {
+        if ($this->isXhr()) {
+            $this->getResponse()->setHeader('X-Icinga-Redirect-Http', 'yes');
+        }
+
         $this->getResponse()->redirectAndExit($url);
     }
 
@@ -447,7 +451,9 @@ class ActionController extends Zend_Controller_Action
     public function preDispatch()
     {
         $form = new AutoRefreshForm();
-        $form->handleRequest();
+        if (! $this->getRequest()->isApiRequest()) {
+            $form->handleRequest();
+        }
         $this->_helper->layout()->autoRefreshForm = $form;
     }
 

@@ -3,6 +3,8 @@
 
 namespace Icinga\Module\Monitoring\Backend\Ido\Query;
 
+use Icinga\Exception\NotImplementedError;
+
 /**
  * Query for host groups
  */
@@ -18,6 +20,11 @@ class HostgroupQuery extends IdoQuery
 
     protected $groupOrigin = array('members');
 
+    protected $subQueryTargets = array(
+        'hostgroups'    => 'hostgroup',
+        'servicegroups' => 'servicegroup'
+    );
+
     protected $columnMap = array(
         'hostgroups' => array(
             'hostgroup'         => 'hgo.name1 COLLATE latin1_general_ci',
@@ -26,6 +33,28 @@ class HostgroupQuery extends IdoQuery
         ),
         'hoststatus' => array(
             'host_handled'  => 'CASE WHEN (hs.problem_has_been_acknowledged + hs.scheduled_downtime_depth) > 0 THEN 1 ELSE 0 END',
+            'host_severity' => '
+                CASE
+                    WHEN hs.has_been_checked = 0 OR hs.has_been_checked IS NULL
+                    THEN 16
+                ELSE
+                    CASE
+                        WHEN hs.current_state = 0
+                        THEN 1
+                    ELSE
+                        CASE
+                            WHEN hs.current_state = 1 THEN 64
+                            WHEN hs.current_state = 2 THEN 32
+                            ELSE 256
+                        END
+                        +
+                        CASE
+                            WHEN hs.problem_has_been_acknowledged = 1 THEN 2
+                            WHEN hs.scheduled_downtime_depth > 0 THEN 1
+                            ELSE 256
+                        END
+                    END
+                END',
             'host_state'    => 'CASE WHEN hs.has_been_checked = 0 OR (hs.has_been_checked IS NULL AND hs.hoststatus_id IS NOT NULL) THEN 99 ELSE hs.current_state END'
         ),
         'instances' => array(
@@ -42,6 +71,43 @@ class HostgroupQuery extends IdoQuery
         ),
         'servicestatus' => array(
             'service_handled'   => 'CASE WHEN (ss.problem_has_been_acknowledged + ss.scheduled_downtime_depth + COALESCE(hs.current_state, 0)) > 0 THEN 1 ELSE 0 END',
+            'service_severity'  => '
+                CASE WHEN ss.current_state = 0
+                THEN
+                    CASE WHEN ss.has_been_checked = 0 OR ss.has_been_checked IS NULL
+                         THEN 16
+                         ELSE 0
+                    END
+                    +
+                    CASE WHEN ss.problem_has_been_acknowledged = 1
+                         THEN 2
+                         ELSE
+                            CASE WHEN ss.scheduled_downtime_depth > 0
+                                THEN 1
+                                ELSE 4
+                            END
+                    END
+                ELSE
+                    CASE WHEN ss.has_been_checked = 0 OR ss.has_been_checked IS NULL THEN 16
+                         WHEN ss.current_state = 1 THEN 32
+                         WHEN ss.current_state = 2 THEN 128
+                         WHEN ss.current_state = 3 THEN 64
+                         ELSE 256
+                    END
+                    +
+                    CASE WHEN hs.current_state > 0
+                         THEN 1024
+                         ELSE
+                             CASE WHEN ss.problem_has_been_acknowledged = 1
+                                  THEN 512
+                                  ELSE
+                                     CASE WHEN ss.scheduled_downtime_depth > 0
+                                         THEN 256
+                                         ELSE 2048
+                                     END
+                             END
+                         END
+                END',
             'service_state'     => 'CASE WHEN ss.has_been_checked = 0 OR (ss.has_been_checked IS NULL AND ss.servicestatus_id IS NOT NULL) THEN 99 ELSE ss.current_state END'
         )
     );
@@ -163,5 +229,32 @@ class HostgroupQuery extends IdoQuery
             'ss.service_object_id = so.object_id',
             array()
         );
+    }
+
+    protected function joinSubQuery(IdoQuery $query, $name, $filter, $and, $negate, &$additionalFilter)
+    {
+        if ($name === 'hostgroup') {
+            if (! $and) {
+                // IN AND NOT IN works for OR filters w/o subquery joins
+                throw new NotImplementedError('');
+            } else {
+                // Propagate that the "parent" query has to be filtered as well
+                $additionalFilter = clone $filter;
+            }
+
+            $this->requireVirtualTable('members');
+
+            $query->joinVirtualTable('members');
+
+            return ['hgm.host_object_id', 'ho.object_id'];
+        } elseif ($name === 'servicegroup') {
+            $this->requireVirtualTable('members');
+
+            $query->joinVirtualTable('services');
+
+            return ['s.host_object_id', 'ho.object_id'];
+        }
+
+        return parent::joinSubQuery($query, $name, $filter, $and, $negate, $additionalFilter);
     }
 }

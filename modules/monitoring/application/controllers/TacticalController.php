@@ -51,6 +51,17 @@ class TacticalController extends Controller
         );
         $this->applyRestriction('monitoring/filter/objects', $stats);
 
+        $this->setupFilterControl($stats, null, ['host', 'service'], ['format']);
+        $this->view->setHelperFunction('filteredUrl', function ($path, array $params) {
+            $filter = clone $this->view->filterEditor->getFilter();
+            foreach ($params as $column => $value) {
+                $filter = $filter->andFilter($filter->where($column, $value));
+            }
+
+            return $this->view->url($path)->setQueryString($filter->toQueryString());
+        });
+
+        $this->handleFormatRequest($stats);
         $summary = $stats->fetchRow();
 
         $hostSummaryChart = new Donut();
@@ -64,7 +75,7 @@ class TacticalController extends Controller
             ->addSlice($summary->hosts_not_checked, array('class' => 'slice-state-not-checked'))
             ->setLabelBig($summary->hosts_down_unhandled)
             ->setLabelBigEyeCatching($summary->hosts_down_unhandled > 0)
-            ->setLabelSmall($this->translate('hosts down'));
+            ->setLabelSmall($this->translate('Hosts Down'));
 
         $serviceSummaryChart = new Donut();
         $serviceSummaryChart
@@ -79,19 +90,21 @@ class TacticalController extends Controller
             ->addSlice($summary->services_not_checked, array('class' => 'slice-state-not-checked'))
             ->setLabelBig($summary->services_critical_unhandled)
             ->setLabelBigEyeCatching($summary->services_critical_unhandled > 0)
-            ->setLabelSmall($this->translate('services critical'));
+            ->setLabelSmall($this->translate('Services Critical'));
 
         $this->view->hostStatusSummaryChart = $hostSummaryChart
-            ->setLabelBigUrl($this->view->url(
+            ->setLabelBigUrl($this->view->filteredUrl(
                 'monitoring/list/hosts',
                 array(
-                    'host_state' => 1, 'host_handled' => 0,
-                    'sort' => 'host_last_check', 'dir' => 'asc'
+                    'host_state' => 1,
+                    'host_handled' => 0,
+                    'sort' => 'host_last_check',
+                    'dir' => 'asc'
                 )
             ))
             ->render();
         $this->view->serviceStatusSummaryChart = $serviceSummaryChart
-            ->setLabelBigUrl($this->view->url(
+            ->setLabelBigUrl($this->view->filteredUrl(
                 'monitoring/list/services',
                 array(
                     'service_state' => 2,

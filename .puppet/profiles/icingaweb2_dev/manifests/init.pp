@@ -22,6 +22,7 @@ class icingaweb2_dev (
 
   # TODO(el): icinga-gui is not a icingaweb2_dev package
   package { [
+    'rh-php71-php-cli',
     'rh-php71-php-gd',
     'rh-php71-php-intl',
     'rh-php71-php-pdo',
@@ -29,7 +30,8 @@ class icingaweb2_dev (
     'rh-php71-php-pgsql',
     'rh-php71-php-ldap',
     'rh-php71-php-xml',
-    'rh-php71-php-xdebug',
+    'rh-php71-php-mbstring',
+    'sclo-php71-php-pecl-xdebug',
     'sclo-php71-php-pecl-imagick',
     'php-phpunit-PHPUnit'
   ]:

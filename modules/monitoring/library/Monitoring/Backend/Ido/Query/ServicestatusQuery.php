@@ -23,6 +23,11 @@ class ServicestatusQuery extends IdoQuery
      */
     protected $groupOrigin = array('hostgroups', 'servicegroups');
 
+    protected $subQueryTargets = array(
+        'hostgroups'    => 'hostgroup',
+        'servicegroups' => 'servicegroup'
+    );
+
     /**
      * {@inheritdoc}
      */
@@ -138,6 +143,7 @@ class ServicestatusQuery extends IdoQuery
             'object_type'               => '(\'service\')',
             'service'                   => 'so.name2 COLLATE latin1_general_ci',
             'service_action_url'        => 's.action_url',
+            'service_check_interval'    => '(s.check_interval * 60)',
             'service_description'       => 'so.name2',
             'service_display_name'      => 's.display_name COLLATE latin1_general_ci',
             'service_host'              => 'so.name1 COLLATE latin1_general_ci',
@@ -262,7 +268,8 @@ class ServicestatusQuery extends IdoQuery
             'service_state'                             => 'CASE WHEN ss.has_been_checked = 0 OR ss.has_been_checked IS NULL THEN 99 ELSE ss.current_state END',
             'service_state_type'                        => 'ss.state_type',
             'service_status_update_time'                => 'ss.status_update_time',
-            'service_unhandled'                         => 'CASE WHEN (ss.problem_has_been_acknowledged + ss.scheduled_downtime_depth + COALESCE(hs.current_state, 0)) = 0 THEN 1 ELSE 0 END'
+            'service_unhandled'                         => 'CASE WHEN (ss.problem_has_been_acknowledged + ss.scheduled_downtime_depth + COALESCE(hs.current_state, 0)) = 0 THEN 1 ELSE 0 END',
+            'problems'                                  => 'CASE WHEN COALESCE(ss.current_state, 0) = 0 THEN 0 ELSE 1 END'
         )
     );
 
@@ -410,5 +417,20 @@ class ServicestatusQuery extends IdoQuery
         } else {
             parent::registerGroupColumns($alias, $table, $groupedColumns, $groupedTables);
         }
+    }
+
+    protected function joinSubQuery(IdoQuery $query, $name, $filter, $and, $negate, &$additionalFilter)
+    {
+        if ($name === 'hostgroup') {
+            $query->joinVirtualTable('members');
+
+            return ['hgm.host_object_id', 's.host_object_id'];
+        } elseif ($name === 'servicegroup') {
+            $query->joinVirtualTable('members');
+
+            return ['sgm.service_object_id', 'so.object_id'];
+        }
+
+        return parent::joinSubQuery($query, $name, $filter, $and, $negate, $additionalFilter);
     }
 }

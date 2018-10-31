@@ -3,6 +3,7 @@
 
 namespace Icinga\Web;
 
+use Icinga\Util\Json;
 use Zend_Controller_Request_Http;
 use Icinga\Application\Icinga;
 use Icinga\User;
@@ -119,5 +120,28 @@ class Request extends Zend_Controller_Request_Http
         }
 
         return $id . '-' . $this->uniqueId;
+    }
+
+    public function getPost($key = null, $default = null)
+    {
+        if ($key === null && $this->extractMediaType($this->getHeader('Content-Type')) === 'application/json') {
+            return Json::decode(file_get_contents('php://input'), true);
+        }
+
+        return parent::getPost($key, $default);
+    }
+
+    /**
+     * Extract and return the media type from the given header value
+     *
+     * @param   string  $headerValue
+     *
+     * @return  string
+     */
+    protected function extractMediaType($headerValue)
+    {
+        // Pretty basic and does not care about parameters
+        $parts = explode(';', $headerValue, 2);
+        return strtolower(trim($parts[0]));
     }
 }

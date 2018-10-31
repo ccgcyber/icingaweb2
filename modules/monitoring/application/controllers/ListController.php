@@ -76,7 +76,8 @@ class ListController extends Controller
             'host_last_state_change' => $stateChangeColumn,
             'host_notifications_enabled',
             'host_active_checks_enabled',
-            'host_passive_checks_enabled'
+            'host_passive_checks_enabled',
+            'host_check_command'
         ), $this->addColumns()));
         $this->applyRestriction('monitoring/filter/objects', $hosts);
 
@@ -156,7 +157,8 @@ class ListController extends Controller
             'service_severity',
             'service_notifications_enabled',
             'service_active_checks_enabled',
-            'service_passive_checks_enabled'
+            'service_passive_checks_enabled',
+            'service_check_command'
         ), $this->addColumns()));
         $this->applyRestriction('monitoring/filter/objects', $services);
 
@@ -485,10 +487,49 @@ class ListController extends Controller
         $this->setupPaginationControl($serviceGroups);
         $this->setupSortControl(array(
             'servicegroup_alias'    => $this->translate('Service Group Name'),
+            'services_severity'     => $this->translate('Severity'),
             'services_total'        => $this->translate('Total Services')
         ), $serviceGroups);
         $this->filterQuery($serviceGroups);
         $this->setupLimitControl();
+
+        $this->view->serviceGroups = $serviceGroups;
+    }
+
+    /**
+     * List service groups
+     */
+    public function servicegroupGridAction()
+    {
+        $this->addTitleTab(
+            'servicegroup-grid',
+            $this->translate('Service Group Grid'),
+            $this->translate('Show the Service Group Grid')
+        );
+
+        $this->setAutorefreshInterval(15);
+
+        $serviceGroups = $this->backend->select()->from('servicegroupsummary', array(
+            'servicegroup_alias',
+            'servicegroup_name',
+            'services_critical_handled',
+            'services_critical_unhandled',
+            'services_ok',
+            'services_pending',
+            'services_total',
+            'services_unknown_handled',
+            'services_unknown_unhandled',
+            'services_warning_handled',
+            'services_warning_unhandled'
+        ));
+        $this->applyRestriction('monitoring/filter/objects', $serviceGroups);
+        $this->filterQuery($serviceGroups);
+
+        $this->setupSortControl(array(
+            'servicegroup_alias'    => $this->translate('Service Group Name'),
+            'services_severity'     => $this->translate('Severity'),
+            'services_total'        => $this->translate('Total Services')
+        ), $serviceGroups, ['services_severity' => 'desc']);
 
         $this->view->serviceGroups = $serviceGroups;
     }
@@ -531,11 +572,49 @@ class ListController extends Controller
         $this->setupPaginationControl($hostGroups);
         $this->setupSortControl(array(
             'hostgroup_alias'   => $this->translate('Host Group Name'),
+            'hosts_severity'    => $this->translate('Severity'),
             'hosts_total'       => $this->translate('Total Hosts'),
             'services_total'    => $this->translate('Total Services')
         ), $hostGroups);
         $this->filterQuery($hostGroups);
         $this->setupLimitControl();
+
+        $this->view->hostGroups = $hostGroups;
+    }
+
+    /**
+     * List host groups
+     */
+    public function hostgroupGridAction()
+    {
+        $this->addTitleTab(
+            'hostgroup-grid',
+            $this->translate('Host Group Grid'),
+            $this->translate('Show the Host Group Grid')
+        );
+
+        $this->setAutorefreshInterval(15);
+
+        $hostGroups = $this->backend->select()->from('hostgroupsummary', [
+            'hostgroup_alias',
+            'hostgroup_name',
+            'hosts_down_handled',
+            'hosts_down_unhandled',
+            'hosts_pending',
+            'hosts_total',
+            'hosts_unreachable_handled',
+            'hosts_unreachable_unhandled',
+            'hosts_up'
+        ]);
+        $this->applyRestriction('monitoring/filter/objects', $hostGroups);
+        $this->filterQuery($hostGroups);
+
+        $this->setupSortControl([
+            'hosts_severity'    => $this->translate('Severity'),
+            'hostgroup_alias'   => $this->translate('Host Group Name'),
+            'hosts_total'       => $this->translate('Total Hosts'),
+            'services_total'    => $this->translate('Total Services')
+        ], $hostGroups, ['hosts_severity' => 'desc']);
 
         $this->view->hostGroups = $hostGroups;
     }
@@ -587,15 +666,27 @@ class ListController extends Controller
         $this->applyRestriction('monitoring/filter/objects', $query);
         $this->filterQuery($query);
         $filter = (bool) $this->params->shift('problems', false) ? Filter::where('service_problem', 1) : null;
-        $pivot = $query
-            ->pivot(
-                'service_description',
-                'host_name',
-                $filter,
-                $filter ? clone $filter : null
-            )
-            ->setXAxisHeader('service_display_name')
-            ->setYAxisHeader('host_display_name');
+        if ($this->params->get('flipped', false)) {
+            $pivot = $query
+                ->pivot(
+                    'host_name',
+                    'service_description',
+                    $filter,
+                    $filter ? clone $filter : null
+                )
+                ->setYAxisHeader('service_display_name')
+                ->setXAxisHeader('host_display_name');
+        } else {
+            $pivot = $query
+                ->pivot(
+                    'service_description',
+                    'host_name',
+                    $filter,
+                    $filter ? clone $filter : null
+                )
+                ->setXAxisHeader('service_display_name')
+                ->setYAxisHeader('host_display_name');
+        }
         $this->setupSortControl(array(
             'host_display_name'     => $this->translate('Hostname'),
             'service_display_name'  => $this->translate('Service Name')
@@ -605,6 +696,9 @@ class ListController extends Controller
         list($pivotData, $pivotHeader) = $pivot->toArray();
         $this->view->pivotData = $pivotData;
         $this->view->pivotHeader = $pivotHeader;
+        if ($this->params->get('flipped', false)) {
+            $this->render('servicegrid-flipped');
+        }
     }
 
     /**
@@ -620,7 +714,8 @@ class ListController extends Controller
             'format', // handleFormatRequest()
             'stateType', // hostsAction() and servicesAction()
             'addColumns', // addColumns()
-            'problems' // servicegridAction()
+            'problems', // servicegridAction()
+            'flipped' // servicegridAction()
         ));
         $this->handleFormatRequest($dataView);
         return $dataView;

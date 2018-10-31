@@ -345,13 +345,20 @@ class Platform
     /**
      * Return whether it's possible to connect to a MSSQL database
      *
-     * Checks whether the mssql pdo extension has been loaded and Zend framework adapter for MSSQL is available
+     * Checks whether the mssql/dblib pdo or sqlsrv extension has
+     * been loaded and Zend framework adapter for MSSQL is available
      *
      * @return  bool
      */
     public static function hasMssqlSupport()
     {
-        return static::extensionLoaded('mssql') && static::classExists('Zend_Db_Adapter_Pdo_Mssql');
+        if ((static::extensionLoaded('mssql') || static::extensionLoaded('pdo_dblib'))
+            && static::classExists('Zend_Db_Adapter_Pdo_Mssql')
+        ) {
+            return true;
+        }
+
+        return static::extensionLoaded('sqlsrv') && static::classExists('Zend_Db_Adapter_Sqlsrv');
     }
 
     /**
@@ -412,5 +419,17 @@ class Platform
     public static function hasPostgresqlSupport()
     {
         return static::extensionLoaded('pdo_pgsql') && static::classExists('Zend_Db_Adapter_Pdo_Pgsql');
+    }
+
+    /**
+     * Return whether it's possible to connect to a SQLite database
+     *
+     * Checks whether the sqlite pdo extension has been loaded and the Zend framework adapter for SQLite is available
+     *
+     * @return  bool
+     */
+    public static function hasSqliteSupport()
+    {
+        return static::extensionLoaded('pdo_sqlite') && static::classExists('Zend_Db_Adapter_Pdo_Sqlite');
     }
 }

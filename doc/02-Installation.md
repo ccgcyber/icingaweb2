@@ -12,11 +12,9 @@ chapter.
 
 ## Installing Requirements <a id="installing-requirements"></a>
 
-* [Icinga 2](https://www.icinga.com/products/icinga-2/) with the IDO database backend (MySQL or PostgreSQL)
+* [Icinga 2](https://icinga.com/products/icinga-2/) with the IDO database backend (MySQL or PostgreSQL)
 * A web server, e.g. Apache or Nginx
-* PHP version >= 5.6.0. Though Icinga Web 2 version 2.5.x is compatible with PHP version >= 5.3.2 there are modules
-  which require a higher PHP version. Also, future versions of Icinga Web 2 will drop support for outdated PHP versions.
-  Packages for Icinga Web 2 already require PHP >= 5.6.0
+* PHP version >= 5.6.0
 * The following PHP modules must be installed: cURL, gettext, intl, mbstring, OpenSSL and xml
 * Default time zone configured for PHP in the php.ini file
 * LDAP PHP library when using Active Directory or LDAP for authentication
@@ -230,7 +228,7 @@ systemctl enable apache2.service
     
 **Debian / Ubuntu**
 
-Your web server should be up and running after the installation.
+Your web server should be up and running after the installation of Icinga Web 2.
 
 ### Setting up FPM <a id="setting-up-fpm"></a>
 

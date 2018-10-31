@@ -45,21 +45,17 @@ class DbResourceForm extends Form
         if (Platform::hasOciSupport()) {
             $dbChoices['oci'] = 'Oracle (OCI8)';
         }
+        if (Platform::hasSqliteSupport()) {
+            $dbChoices['sqlite'] = 'SQLite';
+        }
 
-        $offerSsl = false;
         $offerPostgres = false;
-        $offerIbm = false;
         $offerMysql = false;
         $dbChoice = isset($formData['db']) ? $formData['db'] : key($dbChoices);
         if ($dbChoice === 'pgsql') {
             $offerPostgres = true;
         } elseif ($dbChoice === 'mysql') {
             $offerMysql = true;
-            if (version_compare(Platform::getPhpVersion(), '5.4.0', '>=')) {
-                $offerSsl = true;
-            }
-        } elseif ($dbChoice === 'ibm') {
-            $offerIbm = true;
         }
 
         $socketInfo = '';
@@ -93,75 +89,75 @@ class DbResourceForm extends Form
                 'multiOptions'  => $dbChoices
             )
         );
-        $this->addElement(
-            'text',
-            'host',
-            array (
-                'required'      => true,
-                'label'         => $this->translate('Host'),
-                'description'   => $this->translate('The hostname of the database')
-                    . ($socketInfo ? '. ' . $socketInfo : ''),
-                'value'         => 'localhost'
-            )
-        );
-        $this->addElement(
-            'number',
-            'port',
-            array(
-                'description'       => $this->translate('The port to use'),
-                'label'             => $this->translate('Port'),
-                'preserveDefault'   => true,
-                'required'          => $offerPostgres,
-                'value'             => $offerPostgres ? 5432 : null
-            )
-        );
-        $this->addElement(
-            'text',
-            'dbname',
-            array(
-                'required'      => true,
-                'label'         => $this->translate('Database Name'),
-                'description'   => $this->translate('The name of the database to use')
-            )
-        );
-        $this->addElement(
-            'text',
-            'username',
-            array (
-                'required'      => true,
-                'label'         => $this->translate('Username'),
-                'description'   => $this->translate('The user name to use for authentication')
-            )
-        );
-        $this->addElement(
-            'password',
-            'password',
-            array(
-                'renderPassword'    => true,
-                'label'             => $this->translate('Password'),
-                'description'       => $this->translate('The password to use for authentication')
-            )
-        );
-        $this->addElement(
-            'text',
-            'charset',
-            array (
-                'description'   => $this->translate('The character set for the database'),
-                'label'         => $this->translate('Character Set')
-            )
-        );
-        $this->addElement(
-            'checkbox',
-            'persistent',
-            array(
-                'description'   => $this->translate(
-                    'Check this box for persistent database connections. Persistent connections are not closed at the'
-                    . ' end of a request, but are cached and re-used. This is experimental'
-                ),
-                'label'         => $this->translate('Persistent')
-            )
-        );
-        if ($offerSsl) {
+        if ($dbChoice === 'sqlite') {
+            $this->addElement(
+                'text',
+                'dbname',
+                array(
+                    'required'      => true,
+                    'label'         => $this->translate('Database Name'),
+                    'description'   => $this->translate('The name of the database to use')
+                )
+            );
+        } else {
+            $this->addElement(
+                'text',
+                'host',
+                array (
+                    'required'      => true,
+                    'label'         => $this->translate('Host'),
+                    'description'   => $this->translate('The hostname of the database')
+                        . ($socketInfo ? '. ' . $socketInfo : ''),
+                    'value'         => 'localhost'
+                )
+            );
+            $this->addElement(
+                'number',
+                'port',
+                array(
+                    'description'       => $this->translate('The port to use'),
+                    'label'             => $this->translate('Port'),
+                    'preserveDefault'   => true,
+                    'required'          => $offerPostgres,
+                    'value'             => $offerPostgres ? 5432 : null
+                )
+            );
+            $this->addElement(
+                'text',
+                'dbname',
+                array(
+                    'required'      => true,
+                    'label'         => $this->translate('Database Name'),
+                    'description'   => $this->translate('The name of the database to use')
+                )
+            );
+            $this->addElement(
+                'text',
+                'username',
+                array (
+                    'required'      => true,
+                    'label'         => $this->translate('Username'),
+                    'description'   => $this->translate('The user name to use for authentication')
+                )
+            );
+            $this->addElement(
+                'password',
+                'password',
+                array(
+                    'required'          => true,
+                    'renderPassword'    => true,
+                    'label'             => $this->translate('Password'),
+                    'description'       => $this->translate('The password to use for authentication')
+                )
+            );
+            $this->addElement(
+                'text',
+                'charset',
+                array (
+                    'description'   => $this->translate('The character set for the database'),
+                    'label'         => $this->translate('Character Set')
+                )
+            );
             $this->addElement(
                 'checkbox',
                 'use_ssl',

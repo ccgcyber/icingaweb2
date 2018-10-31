@@ -3,6 +3,7 @@
 
 namespace Icinga\Module\Monitoring\Web\Controller;
 
+use Exception;
 use Icinga\Module\Monitoring\Controller;
 use Icinga\Module\Monitoring\Forms\Command\Object\CheckNowCommandForm;
 use Icinga\Module\Monitoring\Forms\Command\Object\DeleteCommentCommandForm;
@@ -46,7 +47,7 @@ abstract class MonitoredObjectController extends Controller
             $this->view->tickets = Hook::first('ticket');
         }
         if (Hook::has('grapher')) {
-            $this->view->grapher = Hook::first('grapher');
+            $this->view->graphers = Hook::all('grapher');
         }
     }
 
@@ -84,9 +85,16 @@ abstract class MonitoredObjectController extends Controller
         $this->view->extensionsHtml = array();
         foreach (Hook::all('Monitoring\DetailviewExtension') as $hook) {
             /** @var DetailviewExtensionHook $hook */
+
+            try {
+                $html = $hook->setView($this->view)->getHtmlForObject($this->object);
+            } catch (Exception $e) {
+                $html = $this->view->escape($e->getMessage());
+            }
+
             $this->view->extensionsHtml[] =
                 '<div class="icinga-module module-' . $this->view->escape($hook->getModule()->getName()) . '">'
-                . $hook->setView($this->view)->getHtmlForObject($this->object)
+                . $html
                 . '</div>';
         }
     }
@@ -145,7 +153,10 @@ abstract class MonitoredObjectController extends Controller
             );
             $groupName = $this->object->getType() . 'groups';
             $payload[$groupName] = $this->object->$groupName;
-            $this->getResponse()->json()->setSuccessData($payload)->sendResponse();
+            $this->getResponse()->json()
+                ->setSuccessData($payload)
+                ->setAutoSanitize()
+                ->sendResponse();
         }
     }
 
